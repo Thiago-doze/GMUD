@@ -42,13 +42,26 @@ use Zend\Paginator\Adapter\ArrayAdapter;
                         $service = $this->getServiceLocator()->get($this->service);
 
                         if($service->save($request->getPost()->toArray())){
-                            echo("Salvo");
-                            exit;
+                            $this->flashMessenger()->addSuccessMessage('Cadastrado com Sucesso !');
                         }
+                        else{
+                            $this->flashMessenger()->addErrorMessage('Erro ao Cadastrar !');
+                        }
+                        return $this->redirect()->toRoute($this->route, array('controller' => $this->controller));
                     }
                 }
             }
 
+            if($this->flashMessenger()->hasSuccessMessages()){
+                return new ViewModel(array('form' => $form, 'success' => $this->flashMessenger()->getSuccessMessenger()));
+            }
+
+            if($this->flashMessenger()->hasErrorMessages()){
+                return new ViewModel(array('form' => $form, 'success' => $this->flashMessenger()->getErrorMessenger()));
+            }
+            
+            $this->flashMessenger()->clearMessages();
+            
             return new ViewModel(array('form' => $form));
         }
 
