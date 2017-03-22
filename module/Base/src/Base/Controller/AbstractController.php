@@ -76,12 +76,22 @@ abstract class AbstractController extends AbstractActionController {
         $repository = $this->getEm()->getRepository($this->entity)->find($param);
 
         if ($repository) {
-            if ($request->isPost()) {
+            $array = array();
+            foreach ($repository->toarray() as $key => $value) {
+                if ($value instanceof \DateTime) {
+                    $array[$key] = $value->format('d/m/Y');
+                } else {
+                    $array[$key] = $value;
+                }
                 $form->setData($request->getPost());
+            }
+
+            if ($request->isPost()) {
+                $form->setData($array);
 
                 if ($form->isValid()) {
                     $service = $this->getServiceLocator()->get($this->service);
-                    
+
                     $data = $request->getPost()->toArray();
                     $data['id'] = (int) $param;
 
@@ -97,26 +107,35 @@ abstract class AbstractController extends AbstractActionController {
             $this->flashMessenger()->addInfoMessage('Registro não foi encontrado!');
             return $this->redirect()->toRoute($this->route, array('controller' => $this->controller));
         }
-        
+
         if ($this->flashMessenger()->hasSuccessMessages()) {
-            return new ViewModel(array('form' => $form, 'success' => $this->flashMessenger()->getSuccessMessenger(),'id' => $param));
+            return new ViewModel(array('form' => $form, 'success' => $this->flashMessenger()->getSuccessMessenger(), 'id' => $param));
         }
 
         if ($this->flashMessenger()->hasErrorMessages()) {
-            return new ViewModel(array('form' => $form, 'error' => $this->flashMessenger()->getErrorMessenger(),'id' => $param));
+            return new ViewModel(array('form' => $form, 'error' => $this->flashMessenger()->getErrorMessenger(), 'id' => $param));
         }
-            
+
         if ($this->flashMessenger()->hasInfoMessages()) {
-            return new ViewModel(array('form' => $form, 'warning' => $this->flashMessenger()->getInfoMessenger(),'id' => $param));
+            return new ViewModel(array('form' => $form, 'warning' => $this->flashMessenger()->getInfoMessenger(), 'id' => $param));
         }
-        
+
         $this->flashMessenger()->clearMessages();
 
         return new ViewModel(array('form' => $form, 'id' => $param));
     }
 
     public function excluirAction() {
+        $service = $this->getServiceLocator()->get($this->service);
+        $id = $this->params()->fromRoute('id', 0);
         
+        if($service->remove(array('id' => $id))){
+            $this->flashMessenger()->addSuccessMessage('Registro excluído com Sucesso!');
+        }else{
+            $this->flashMessenger()->addErrorMessage('Erro ao excluir o registro!');
+        }
+        
+        return $this->redirect()->toRoute($this->route, array('controller' => $this->controller));
     }
 
     public function getEm() {
@@ -126,7 +145,5 @@ abstract class AbstractController extends AbstractActionController {
 
         return $this->em;
     }
-    
-    //teste
 
 }
